@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>dvd bouncing</title>
+    <style>
+        body { 
+            margin: 0; background: #000; overflow: hidden; 
+            display: flex; align-items: center; justify-content: center; 
+            height: 100vh; font-family: 'Courier New', monospace;
+        }
+
+        #master-wrap {
+            transform: scale(0.9);
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        canvas { 
+            background: #000; border: 2px solid #333; 
+            box-shadow: 0 0 30px rgba(0, 100, 255, 0.2); 
+        }
+        
+        #stats { align-self: flex-start; margin-bottom: 10px; color: #0088ff; text-shadow: 0 0 5px #0088ff; }
+
+        .bottom-bar {
+            width: 800px; margin-top: 15px; display: flex;
+            justify-content: space-between; align-items: center;
+            background: #000; padding: 10px 0; border-top: 1px solid #222;
+        }
+
+        /* Styling the extended slider to match your blue pen line */
+        .speed-control { display: flex; align-items: center; gap: 15px; flex-grow: 1; }
+        
+        #speedSlider { 
+            flex-grow: 1; /* This makes it stretch out like your drawing */
+            max-width: 450px; /* Keeps it from hitting the Reconnect button */
+            cursor: pointer; 
+            accent-color: #0088ff;
+            height: 4px;
+            background: #111;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .server-status { color: #0088ff; font-size: 12px; display: flex; align-items: center; gap: 10px; padding-left: 20px;}
+        .dot { width: 8px; height: 8px; background: #0088ff; border-radius: 50%; box-shadow: 0 0 8px #0088ff; }
+        
+        button { 
+            background: transparent; color: #0088ff; border: 1px solid #0088ff; 
+            padding: 5px 15px; cursor: pointer; font-family: inherit; font-size: 11px;
+        }
+        button:hover { background: rgba(0, 136, 255, 0.2); }
+        label { color: #555; font-size: 11px; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+
+    <div id="master-wrap">
+        <div id="stats">CORNER HITS: <span id="hits">0</span></div>
+        <canvas id="dvdCanvas"></canvas>
+
+        <div class="bottom-bar">
+            <div class="speed-control">
+                <label>SPEED</label>
+                <input type="range" id="speedSlider" min="1" max="30" value="5">
+            </div>
+            
+            <div class="server-status">
+                <div class="dot"></div>
+                <span>SERVER: ONLINE</span>
+                <button onclick="location.reload()">RECONNECT</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('dvdCanvas');
+        const ctx = canvas.getContext('2d');
+        const hitsEl = document.getElementById('hits');
+        const speedSlider = document.getElementById('speedSlider');
+
+        canvas.width = 800;
+        canvas.height = 600;
+
+        const img = new Image();
+        img.src = 'image_1b2262.png'; 
+
+        let dvd = {
+            x: 50, y: 50,
+            w: 180, h: 90,
+            dx: 5, dy: 5,
+            hue: 0,
+            hits: 0
+        };
+
+        img.onload = () => { update(); };
+
+        function update() {
+            const currentSpeed = parseInt(speedSlider.value);
+            dvd.dx = dvd.dx > 0 ? currentSpeed : -currentSpeed;
+            dvd.dy = dvd.dy > 0 ? currentSpeed : -currentSpeed;
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            dvd.x += dvd.dx;
+            dvd.y += dvd.dy;
+
+            let hitX = false, hitY = false;
+
+            if (dvd.x <= 0 || dvd.x + dvd.w >= canvas.width) {
+                dvd.dx *= -1;
+                hitX = true;
+            }
+            if (dvd.y <= 0 || dvd.y + dvd.h >= canvas.height) {
+                dvd.dy *= -1;
+                hitY = true;
+            }
+
+            if (hitX || hitY) {
+                dvd.hue = (dvd.hue + 45) % 360; 
+            }
+
+            if (hitX && hitY) {
+                dvd.hits++;
+                hitsEl.innerText = dvd.hits;
+            }
+
+            ctx.save();
+            ctx.filter = `hue-rotate(${dvd.hue}deg) brightness(1.2)`;
+            ctx.drawImage(img, dvd.x, dvd.y, dvd.w, dvd.h);
+            ctx.restore();
+
+            requestAnimationFrame(update);
+        }
+    </script>
+</body>
+</html>
